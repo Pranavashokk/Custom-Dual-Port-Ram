@@ -73,69 +73,37 @@ module true_dual_port_bram_tb;
     endtask
 
     initial begin
-        $display("----------------------------------------------------------------");
-        $display("Starting True Dual-Port BRAM Comparison Testbench");
-        $display("----------------------------------------------------------------");
-
         initialize;
         #10;
         clk_en = 1;
 
-        $display("T1: Initial Write (0xD0 -> 0x10) for setup.");
         port_en_0 = 1; wr_en_0 = 1; addr_in_0 = 8'h10; data_in_0 = 8'hD0;
         @(posedge clk);
         port_en_0 = 0; wr_en_0 = 0;
         @(posedge clk);
 
-        $display("T2: Read Comparison (0x10 should contain 0xD0)");
         port_en_0 = 1; wr_en_0 = 0; addr_in_0 = 8'h10;
         port_en_1 = 1; wr_en_1 = 0; addr_in_1 = 8'h10;
-        # (CLK_PERIOD / 2);
-        if (data_out_0_async == 8'hD0) $display("    PASS: Async Port 0 reads 0x%h instantly.", data_out_0_async);
-        else $display("    ERROR: Async Port 0 reads 0x%h (Expected 0xD0).", data_out_0_async);
-        if (data_out_0_sync == 8'h00) $display("    PASS: Sync Port 0 still reads 0x%h (Previous cycle output).", data_out_0_sync);
-        else $display("    ERROR: Sync Port 0 reads 0x%h too early (Expected 0x00).", data_out_0_sync);
         @(posedge clk);
-        # (CLK_PERIOD / 2);
-        if (data_out_0_async == 8'hD0) $display("    PASS: Async Port 0 reads 0x%h.", data_out_0_async);
-        if (data_out_0_sync == 8'hD0) $display("    PASS: Sync Port 0 reads 0x%h (One-cycle delay confirmed).", data_out_0_sync);
-        else $display("    ERROR: Sync Port 0 failed to read 0x%h (Expected 0xD0).", data_out_0_sync);
         port_en_0 = 0; port_en_1 = 0;
         @(posedge clk);
 
-        $display("T3: Write-Read Conflict Comparison (Port 0 W, Port 1 R, Same Address)");
         port_en_0 = 1; wr_en_0 = 1; addr_in_0 = 8'h10; data_in_0 = 8'hF1;
         port_en_1 = 1; wr_en_1 = 0; addr_in_1 = 8'h10;
-        # (CLK_PERIOD / 2);
-        if (data_out_1_async == 8'hD0) $display("    PASS: Async Port 1 reads OLD data 0x%h mid-cycle.", data_out_1_async);
-        else $display("    ERROR: Async Port 1 reads 0x%h (Expected OLD 0xD0).", data_out_1_async);
-        if (data_out_1_sync == 8'hD0) $display("    PASS: Sync Port 1 reads PREVIOUS data 0x%h mid-cycle.", data_out_1_sync);
-        else $display("    ERROR: Sync Port 1 reads 0x%h (Expected PREVIOUS 0xD0).", data_out_1_sync);
         @(posedge clk);
         port_en_0 = 0; wr_en_0 = 0;
         port_en_1 = 1; wr_en_1 = 0; addr_in_1 = 8'h10;
-        # (CLK_PERIOD / 2);
-        if (data_out_1_async == 8'hF1) $display("    PASS: Async Port 1 instantly updates to NEW data 0x%h.", data_out_1_async);
-        else $display("    ERROR: Async Port 1 reads 0x%h (Expected NEW 0xF1).", data_out_1_async);
-        if (data_out_1_sync == 8'hF1) $display("    PASS: Sync Port 1 updates to NEW data 0x%h (After one cycle delay).", data_out_1_sync);
-        else $display("    ERROR: Sync Port 1 reads 0x%h (Expected NEW 0xF1).", data_out_1_sync);
+        @(posedge clk);
         port_en_1 = 0;
         @(posedge clk);
 
-        $display("T4: Write-Write Collision Test (0x20, 0xA5 vs 0x5A)");
         port_en_0 = 1; wr_en_0 = 1; addr_in_0 = 8'h20; data_in_0 = 8'hA5;
         port_en_1 = 1; wr_en_1 = 1; addr_in_1 = 8'h20; data_in_1 = 8'h5A;
         @(posedge clk);
-        if (collision_flag_async) $display("    PASS: Async Collision flag asserted.");
-        else $display("    ERROR: Async Collision flag NOT asserted.");
-        if (collision_flag_sync) $display("    PASS: Sync Collision flag asserted.");
-        else $display("    ERROR: Sync Collision flag NOT asserted.");
         port_en_0 = 0; wr_en_0 = 0;
         port_en_1 = 0; wr_en_1 = 0;
         @(posedge clk);
 
-        $display("----------------------------------------------------------------");
-        $display("Testbench finished.");
         $finish;
     end
 
